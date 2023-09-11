@@ -49,12 +49,77 @@ regd_users.post("/login", (req, res) => {
 
 // Add a book review
 regd_users.put("/auth/review/:isbn", (req, res) => {
-    //Write your code here
-    return res.status(300).json({ message: "Yet to be implemented" });
+    const Review = req.params.review;
+
+    const isbn = req.params.isbn;
+
+    const book = books[isbn];
+    if (!book) {
+        return res.status(404).json({ message: "Book not found" });
+    }
+
+    if (!Array.isArray(book.reviews)) {
+        book.reviews = [];
+    }
+
+    const username = req.session && req.session.authorization && req.session.authorization.username;
+    if (!username) {
+        return res.status(400).json({ message: "Username not found in session" });
+    }
+
+    const existingReview = book.reviews.find(review => review.username === username);
+    if (existingReview) {
+        // User has already reviewed, update the review
+        existingReview.content = Review;
+    } else {
+        // New review
+        book.reviews.push({
+            username: username,
+            content: Review
+        });
+    }
+
+    // Save book changes (this would typically be in a database, but since this is a simple in-memory store, nothing extra is needed)
+
+    // Respond to the client
+    res.status(200).json({ message: "Review successfully posted/updated", reviews: book.reviews });
+
 });
+
+regd_users.delete("/auth/review/:isbn", (req, res) => {
+    const isbn = req.params.isbn;
+
+    // Check if book exists
+    const book = books[isbn];
+    if (!book) {
+        return res.status(404).json({ message: "Book not found" });
+    }
+
+    // Ensure that book.reviews is an array before proceeding
+    if (!Array.isArray(book.reviews)) {
+        return res.status(404).json({ message: "No reviews found for this book" });
+    }
+    
+    // Extract username from the session
+    const username = req.session && req.session.authorization && req.session.authorization.username;
+    if (!username) {
+        return res.status(400).json({ message: "Username not found in session" });
+    }
+
+    const initialLength = book.reviews.length;
+
+    // Filter out the reviews written by the session's username
+    book.reviews = book.reviews.filter(review => review.username !== username);
+
+    // If no reviews were deleted
+    if (initialLength === book.reviews.length) {
+        return res.status(404).json({ message: "No reviews found for this user on the specified book" });
+    }
+
+    return res.status(200).json({ message: "Successfully deleted the user's review" });
+});
+
 
 module.exports.authenticated = regd_users;
 module.exports.isValid = isValid;
 module.exports.users = users;
-
-
