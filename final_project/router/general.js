@@ -21,49 +21,79 @@ public_users.post("/register", (req, res) => {
 
 // Get the book list available in the shop
 public_users.get('/', function (req, res) {
-    res.send(JSON.stringify(books, null, 4))
+    let myPromise = new Promise((resolve, rejct) => {
+        resolve(books);
+    })
+
+    myPromise.then((success) => {
+        res.send(JSON.stringify(success, null, 4));
+    })
 });
 
 // Get book details based on ISBN
 public_users.get('/isbn/:isbn', function (req, res) {
     const ISBN = req.params.isbn;
-    res.send(books[ISBN]);
+    let myPromise = new Promise((resolve, reject) => {
+        resolve(books[ISBN]);
+    })
+
+    myPromise.then((success) => {
+        res.send(success);
+    })
 });
 
 // Get book details based on author
 public_users.get('/author/:author', function (req, res) {
     const Author = req.params.author;
-    const bookKeys = Object.keys(books);
-    let filtered_books = [];
-    bookKeys.forEach(key => {
-        if (books[key].author === Author) {
-            filtered_books.push(books[key]);
+    let myPromise = new Promise((resolve, reject) => {
+        const bookKeys = Object.keys(books);
+        let filtered_books = [];
+
+        bookKeys.forEach(key => {
+            if (books[key].author === Author) {
+                filtered_books.push(books[key]);
+            }
+        });
+
+        if (filtered_books.length === 0) {
+            reject('No books were found for this author');
+        } else {
+            resolve(filtered_books);
         }
-    });
+    })
 
-    if (filtered_books.length === 0) {
-        return res.status(404).json({ message: 'No books found for this author.' });
-    }
-
-    res.send(filtered_books);
+    myPromise.then((filtered_books) => {
+        res.send(filtered_books);
+    }).catch((error) => {
+        res.send({ message: error });
+    })
 });
 
 // Get all books based on title
 public_users.get('/title/:title', function (req, res) {
     const Title = req.params.title;
-    const bookKeys = Object.keys(books);
-    let filtered_books = [];
-    bookKeys.forEach(key => {
-        if (books[key].title === Title) {
-            filtered_books.push(books[key]);
+
+    let MyPromise = new Promise((resolve, reject) => {
+        const bookKeys = Object.keys(books);
+        let filtered_books = [];
+        bookKeys.forEach(key => {
+            if (books[key].title === Title) {
+                filtered_books.push(books[key]);
+            }
+        });
+
+        if (filtered_books.length === 0) {
+            reject('No books are found for this author'); 
+        }else {
+            resolve(filtered_books); 
         }
-    });
+    })
 
-    if (filtered_books.length === 0) {
-        return res.status(404).json({ message: 'No books found for this author.' });
-    }
-
-    res.send(filtered_books);
+    MyPromise.then((filtered_books) =>{
+        res.send(filtered_books); 
+    }).catch((error) => {
+        res.send({message: error}); 
+    })
 });
 
 //  Get book review
